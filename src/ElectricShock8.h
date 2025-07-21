@@ -69,6 +69,12 @@ private:
 		D3DXTEXCOORD texture;
 	};
 
+	struct InfoTexture2D
+	{
+		UINT Width;
+		UINT Height;
+		DXGI_FORMAT Format;
+	};
 	
 	void OnResizeVideo();
 	void OnSlider(int id);
@@ -83,7 +89,8 @@ private:
 	HRESULT Update_VertexBufferDynamic_D3D11(ID3D11DeviceContext* ctx);
 	HRESULT Update_Vertices_D3D11();
 	HRESULT Create_BlendState_D3D11(ID3D11Device* pDevice);
-
+	HRESULT GetInfoFromShaderResourceView(ID3D11ShaderResourceView* pShaderResourceView, InfoTexture2D* info);
+	HRESULT GetInfoFromRenderTargetView(ID3D11RenderTargetView* pRenderTargetView, InfoTexture2D* info);
 	
 	ID3D11Device* pD3DDevice;
 	ID3D11DeviceContext* pD3DDeviceContext;
