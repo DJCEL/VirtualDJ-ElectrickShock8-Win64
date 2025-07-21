@@ -158,16 +158,16 @@ HRESULT VDJ_API CElectricShock8::OnDraw()
 		OnResizeVideo();
 	}
 
-	// We get current texture and vertices
-	hr = GetTexture(VdjVideoEngineDirectX11, (void**) &pTexture, &vertices);
-	if (hr != S_OK) return S_FALSE;
-
 	pD3DDevice->GetImmediateContext(&pD3DDeviceContext);
 	if (!pD3DDeviceContext) return S_FALSE;
 
 	pD3DDeviceContext->OMGetRenderTargets(1, &pD3DRenderTargetView, nullptr);
 	if (!pD3DRenderTargetView) return S_FALSE;
 
+	// We get current texture and vertices
+	hr = GetTexture(VdjVideoEngineDirectX11, (void**) &pTexture, &vertices);
+	if (hr != S_OK) return S_FALSE;
+	
 	hr = Rendering_D3D11(pD3DDevice, pD3DDeviceContext, pD3DRenderTargetView, pTexture, vertices);
 	if (hr != S_OK) return S_FALSE;
 
