@@ -218,9 +218,13 @@ void CElectricShock8::Release_D3D11()
 HRESULT CElectricShock8::Rendering_D3D11(ID3D11Device* pDevice, ID3D11DeviceContext* pDeviceContext, ID3D11RenderTargetView* pRenderTargetView, ID3D11ShaderResourceView* pTextureView, TVertex8* pVertices)
 {
 	HRESULT hr = S_FALSE;
+	//InfoTexture2D InfoRTV = {};
+	//InfoTexture2D InfoSRV = {};
+	//hr = GetInfoFromRenderTargetView(pRenderTargetView, &InfoRTV);
+	//hr = GetInfoFromShaderResourceView(pTextureView, &InfoSRV);
+
 	D3DXCOLOR Color = {};
-
-
+	
 	double fbp = SongPosBeats - floor(SongPosBeats);
 	if (fbp >= 0 && fbp < m_length)
 	{
@@ -425,4 +429,82 @@ HRESULT CElectricShock8::Create_BlendState_D3D11(ID3D11Device* pDevice)
 	hr = pDevice->CreateBlendState(&BlendStateDesc, &pBlendState);
 
 	return hr;
+}
+//-----------------------------------------------------------------------
+HRESULT CElectricShock8::GetInfoFromShaderResourceView(ID3D11ShaderResourceView* pShaderResourceView, InfoTexture2D* info)
+{
+	HRESULT hr = S_FALSE;
+
+	D3D11_SHADER_RESOURCE_VIEW_DESC viewDesc;
+	ZeroMemory(&viewDesc, sizeof(D3D11_SHADER_RESOURCE_VIEW_DESC));
+
+	pShaderResourceView->GetDesc(&viewDesc);
+
+	DXGI_FORMAT ViewFormat = viewDesc.Format;
+	D3D11_SRV_DIMENSION ViewDimension = viewDesc.ViewDimension;
+
+	ID3D11Resource* pResource = nullptr;
+	pShaderResourceView->GetResource(&pResource);
+	if (!pResource) return S_FALSE;
+
+	if (ViewDimension == D3D11_SRV_DIMENSION_TEXTURE2D)
+	{
+		ID3D11Texture2D* pTexture = nullptr;
+		hr = pResource->QueryInterface(__uuidof(ID3D11Texture2D), (void**)&pTexture);
+		if (hr != S_OK || !pTexture) return S_FALSE;
+
+		D3D11_TEXTURE2D_DESC textureDesc;
+		ZeroMemory(&textureDesc, sizeof(D3D11_TEXTURE2D_DESC));
+
+		pTexture->GetDesc(&textureDesc);
+
+		info->Format = textureDesc.Format;
+		info->Width = textureDesc.Width;
+		info->Height = textureDesc.Height;
+
+		SAFE_RELEASE(pTexture);
+	}
+
+	SAFE_RELEASE(pResource);
+
+	return S_OK;
+}
+//-----------------------------------------------------------------------
+HRESULT CElectricShock8::GetInfoFromRenderTargetView(ID3D11RenderTargetView* pRenderTargetView, InfoTexture2D* info)
+{
+	HRESULT hr = S_FALSE;
+
+	D3D11_RENDER_TARGET_VIEW_DESC viewDesc;
+	ZeroMemory(&viewDesc, sizeof(D3D11_RENDER_TARGET_VIEW_DESC));
+
+	pRenderTargetView->GetDesc(&viewDesc);
+
+	DXGI_FORMAT ViewFormat = viewDesc.Format;
+	D3D11_RTV_DIMENSION ViewDimension = viewDesc.ViewDimension;
+
+	ID3D11Resource* pResource = nullptr;
+	pRenderTargetView->GetResource(&pResource);
+	if (!pResource) return S_FALSE;
+
+	if (ViewDimension == D3D11_RTV_DIMENSION_TEXTURE2D)
+	{
+		ID3D11Texture2D* pTexture = nullptr;
+		hr = pResource->QueryInterface(__uuidof(ID3D11Texture2D), (void**)&pTexture);
+		if (hr != S_OK || !pTexture) return S_FALSE;
+
+		D3D11_TEXTURE2D_DESC textureDesc;
+		ZeroMemory(&textureDesc, sizeof(D3D11_TEXTURE2D_DESC));
+
+		pTexture->GetDesc(&textureDesc);
+
+		info->Format = textureDesc.Format;
+		info->Width = textureDesc.Width;
+		info->Height = textureDesc.Height;
+
+		SAFE_RELEASE(pTexture);
+	}
+
+	SAFE_RELEASE(pResource);
+
+	return S_OK;
 }
