@@ -158,6 +158,8 @@ HRESULT VDJ_API CElectricShock8::OnDraw()
 		OnResizeVideo();
 	}
 
+	if (!pD3DDevice) return S_FALSE;
+
 	pD3DDevice->GetImmediateContext(&pD3DDeviceContext);
 	if (!pD3DDeviceContext) return S_FALSE;
 
