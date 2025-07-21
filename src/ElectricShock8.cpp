@@ -158,9 +158,6 @@ HRESULT VDJ_API CElectricShock8::OnDraw()
 		OnResizeVideo();
 	}
 
-	hr = DrawDeck();
-	if (hr != S_OK) return S_FALSE;
-
 	// We get current texture and vertices
 	hr = GetTexture(VdjVideoEngineDirectX11, (void**) &pTexture, &vertices);
 	if (hr != S_OK) return S_FALSE;
@@ -218,10 +215,16 @@ void CElectricShock8::Release_D3D11()
 HRESULT CElectricShock8::Rendering_D3D11(ID3D11Device* pDevice, ID3D11DeviceContext* pDeviceContext, ID3D11RenderTargetView* pRenderTargetView, ID3D11ShaderResourceView* pTextureView, TVertex8* pVertices)
 {
 	HRESULT hr = S_FALSE;
-	//InfoTexture2D InfoRTV = {};
-	//InfoTexture2D InfoSRV = {};
-	//hr = GetInfoFromRenderTargetView(pRenderTargetView, &InfoRTV);
-	//hr = GetInfoFromShaderResourceView(pTextureView, &InfoSRV);
+	
+#ifdef _DEBUG
+	InfoTexture2D InfoRTV = {};
+	InfoTexture2D InfoSRV = {};
+	hr = GetInfoFromRenderTargetView(pRenderTargetView, &InfoRTV);
+	hr = GetInfoFromShaderResourceView(pTextureView, &InfoSRV);
+#endif
+
+	hr = DrawDeck();
+	if (hr != S_OK) return S_FALSE;
 
 	D3DXCOLOR Color = {};
 	
