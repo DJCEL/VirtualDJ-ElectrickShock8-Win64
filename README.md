@@ -7,7 +7,7 @@ WARNING - READ THIS NOTICE BEFORE USING THIS PLUGIN:
 
 A very small percentage of people may experience epileptic seizures or blackouts when exposed to certain kinds of flashing lights or light patterns.
 
-FFT (Fast Fourier Transformation) computation uses the FFTW libary. You can download it with vcpkg
+FFT (Fast Fourier Transformation) computation uses the [FFTW](https://www.fftw.org/) libary. You can download it with vcpkg
 
 To install the FFTW libary (static library):
 ```powershell
