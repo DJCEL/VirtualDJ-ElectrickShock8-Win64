@@ -4,7 +4,7 @@
     <ClCompile Include="..\src\main.cpp">
       <Filter>src</Filter>
     </ClCompile>
-    <ClCompile Include="..\src\ElectricShock8.cpp">
+    <ClCompile Include="..\src\ElectrickShock8.cpp">
       <Filter>src</Filter>
     </ClCompile>
   </ItemGroup>
@@ -12,7 +12,7 @@
     <ClInclude Include="..\src\resource.h">
       <Filter>src</Filter>
     </ClInclude>
-    <ClInclude Include="..\src\ElectricShock8.h">
+    <ClInclude Include="..\src\ElectrickShock8.h">
       <Filter>src</Filter>
     </ClInclude>
     <ClInclude Include="..\src\VdjPlugin8.h">
@@ -26,7 +26,7 @@
     <Filter Include="src">
       <UniqueIdentifier>{b2c91c54-db1a-48fd-a4e2-2e9acc8e3501}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Shaders">
+    <Filter Include="src\Shaders">
       <UniqueIdentifier>{20a18865-d087-4697-944b-0f912b21f52d}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
@@ -37,12 +37,12 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="..\src\Shaders\PixelShader.cso">
-      <Filter>Shaders</Filter>
+      <Filter>src\Shaders</Filter>
     </None>
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="..\src\Shaders\PixelShader.hlsl">
-      <Filter>Shaders</Filter>
+      <Filter>src\Shaders</Filter>
     </FxCompile>
   </ItemGroup>
 </Project>
