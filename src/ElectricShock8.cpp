@@ -10,8 +10,10 @@ CElectricShock8::CElectricShock8()
 	pPixelShader = nullptr;
 	pD3DRenderTargetView = nullptr;
 	pBlendState = nullptr;
+	pPSConstantBuffer = nullptr;
 	ZeroMemory(pNewVertices, 6 * sizeof(TVertex8));
-	ZeroMemory(m_SliderValue, 3 * sizeof(float));
+	ZeroMemory(m_SliderValue, 5 * sizeof(float));
+	m_PSConstantBufferData = {};
 	m_DirectX_On = false;
 	m_WidthOnDeviceInit = 0;
 	m_HeightOnDeviceInit = 0;
@@ -20,7 +22,17 @@ CElectricShock8::CElectricShock8()
 	m_VertexCount = 0;
 	m_alpha = 1.0f;
 	m_length = 0.0f;
+	m_SongPosBeatsPrevious = 0;
+	m_ref_freq = 0;
+	m_DetectLowFreq = 0;
+	m_minFreq = 0;
 	m_VideoScale = 1.0f;
+	m_FX_Select = 0;
+	m_FX_Activate = 0;
+	m_FX_Activate_Previous = 0;
+	m_FX_Time = 0.0f;
+	m_FX_Time_Previous = 0;
+	m_FX_Select_Random = 0;
 }
 //------------------------------------------------------------------------------------------
 CElectricShock8::~CElectricShock8()
@@ -32,9 +44,16 @@ HRESULT VDJ_API CElectricShock8::OnLoad()
 {
 	HRESULT hr = S_FALSE;
 
-	hr = DeclareParameterSlider(&m_SliderValue[0], ID_SLIDER_1, "Alpha", "A", 0.0f);
+	hr = DeclareParameterSlider(&m_SliderValue[0], ID_SLIDER_1, "VideoAlpha", "A", 0.0f);
 	hr = DeclareParameterSlider(&m_SliderValue[1], ID_SLIDER_2, "VideoScale", "VS", 0.3f);
 	hr = DeclareParameterSlider(&m_SliderValue[2], ID_SLIDER_3, "Length", "L", 0.25f);
+	hr = DeclareParameterSlider(&m_SliderValue[3], ID_SLIDER_4, "FX Select", "FX", 0.0f);
+	hr = DeclareParameterSwitch(&m_FX_Select_Random, ID_SWITCH_1, "FX Select Random", "FXR", 0.0f);
+
+	#ifdef USE_FFT
+	hr = DeclareParameterSlider(&m_SliderValue[4], ID_SLIDER_5, "MinFreq", "FQ", 0.3f);
+	hr = DeclareParameterSwitch(&m_DetectLowFreq, ID_SWITCH_2, "Detect LowFreq", "LF", 0.0f);
+	#endif
 
 	OnParameter(ID_INIT);
 	return S_OK;
@@ -46,7 +65,7 @@ HRESULT VDJ_API CElectricShock8::OnGetPluginInfo(TVdjPluginInfo8 *info)
 	info->PluginName = "ElectricShock8";
 	info->Description = "It acts like a negative effect at each beat.";
 	info->Flags = 0x00; // VDJFLAG_VIDEO_OUTPUTRESOLUTION | VDJFLAG_VIDEO_OUTPUTASPECTRATIO;
-	info->Version = "1.0 (64-bit)";
+	info->Version = "2.0 (64-bit)";
 
 	return S_OK;
 }
@@ -61,7 +80,7 @@ HRESULT VDJ_API CElectricShock8::OnParameter(int id)
 {
 	if (id == ID_INIT)
 	{
-		for (int i = ID_SLIDER_1; i <= ID_SLIDER_3; i++) OnSlider(i);
+		for (int i = ID_SLIDER_MIN; i <= ID_SLIDER_MAX; i++) OnSlider(i);
 	}
 
 	OnSlider(id);
@@ -85,6 +104,13 @@ void CElectricShock8::OnSlider(int id)
 			m_length = m_SliderValue[2];
 			break;
 
+		case ID_SLIDER_4:
+			m_FX_Select = int(m_SliderValue[3] * float(MAX_FX));
+			break;
+
+		case ID_SLIDER_5:
+			m_minFreq = MIN_FREQ + m_SliderValue[4] * (MAX_FREQ - MIN_FREQ);
+			break;
 	}
 }
 //-------------------------------------------------------------------------------------------
@@ -104,6 +130,110 @@ HRESULT VDJ_API CElectricShock8::OnGetParameterString(int id, char* outParam, in
 			sprintf_s(outParam, outParamSize, "%.2f beat", m_length);
 			break;
 
+		case ID_SLIDER_4:
+			switch (m_FX_Select)
+			{
+				case 0:
+					sprintf_s(outParam, outParamSize, "None");
+					break;
+
+				case 1:
+					sprintf_s(outParam, outParamSize, "Negative");
+					break;
+
+				case 2:
+					sprintf_s(outParam, outParamSize, "2 bands V");
+					break;
+
+				case 3:
+					sprintf_s(outParam, outParamSize, "4 bands V");
+					break;
+
+				case 4:
+					sprintf_s(outParam, outParamSize, "8 bands V");
+					break;
+
+				case 5:
+					sprintf_s(outParam, outParamSize, "16 bands V");
+					break;
+
+				case 6:
+					sprintf_s(outParam, outParamSize, "32 bands V");
+					break;
+
+				case 7:
+					sprintf_s(outParam, outParamSize, "32 bands H");
+					break;
+
+				case 8:
+					sprintf_s(outParam, outParamSize, "16 bands H");
+					break;
+
+				case 9:
+					sprintf_s(outParam, outParamSize, "8 bands H");
+					break;
+
+				case 10:
+					sprintf_s(outParam, outParamSize, "4 bands H");
+					break;
+
+				case 11:
+					sprintf_s(outParam, outParamSize, "2 bands H");
+					break;
+
+				case 12:
+					sprintf_s(outParam, outParamSize, "2 bands H+V");
+					break;
+
+				case 13:
+					sprintf_s(outParam, outParamSize, "4 bands H+V");
+					break;
+
+				case 14:
+					sprintf_s(outParam, outParamSize, "8 bands H+V");
+					break;
+
+				case 15:
+					sprintf_s(outParam, outParamSize, "16 bands H+V");
+					break;
+
+				case 16:
+					sprintf_s(outParam, outParamSize, "32 bands H+V");
+					break;
+
+				case 17:
+					sprintf_s(outParam, outParamSize, "32 bands H+V Inv");
+					break;
+
+				case 18:
+					sprintf_s(outParam, outParamSize, "16 bands H+V Inv");
+					break;
+
+				case 19:
+					sprintf_s(outParam, outParamSize, "8 bands H+V Inv");
+					break;
+
+				case 20:
+					sprintf_s(outParam, outParamSize, "4 bands H+V Inv");
+					break;
+
+				case 21:
+					sprintf_s(outParam, outParamSize, "2 bands H+V Inv");
+					break;
+
+				case 22:
+					sprintf_s(outParam, outParamSize, "Triangle");
+					break;
+
+				case 23:
+					sprintf_s(outParam, outParamSize, "Circle");
+					break;
+			}
+			break;
+
+		case ID_SLIDER_5:
+			sprintf_s(outParam, outParamSize, "%.0f Hz", m_minFreq);
+			break;
 	}
 
 	return S_OK;
@@ -167,9 +297,9 @@ HRESULT VDJ_API CElectricShock8::OnDraw()
 	if (!pD3DRenderTargetView) return S_FALSE;
 
 	// We get current texture and vertices
-	hr = GetTexture(VdjVideoEngineDirectX11, (void**) &pTexture, &vertices);
+	hr = GetTexture(VdjVideoEngineDirectX11, (void**)&pTexture, &vertices);
 	if (hr != S_OK) return S_FALSE;
-	
+
 	hr = Rendering_D3D11(pD3DDevice, pD3DDeviceContext, pD3DRenderTargetView, pTexture, vertices);
 	if (hr != S_OK) return S_FALSE;
 
@@ -178,11 +308,13 @@ HRESULT VDJ_API CElectricShock8::OnDraw()
 //-----------------------------------------------------------------------
 HRESULT VDJ_API CElectricShock8::OnAudioSamples(float* buffer, int nb)
 { 
-	//int FFT_SIZE = 512; // Size of the FFT (must be a power of 2)
-
-	//ComputeFFT(buffer, nb, FFT_SIZE);
-
-	return E_NOTIMPL;
+	#ifdef USE_FFT
+		int FFT_SIZE = 512; // Size of the FFT (must be a power of 2)
+		ComputeFFT(buffer, nb, FFT_SIZE);
+		return S_OK; 
+	#else
+		return E_NOTIMPL;
+	#endif
 }
 //-----------------------------------------------------------------------
 void CElectricShock8::OnResizeVideo()
@@ -201,8 +333,11 @@ HRESULT CElectricShock8::Initialize_D3D11(ID3D11Device* pDevice)
 	hr = Create_PixelShader_D3D11(pDevice);
 	if (hr != S_OK) return S_FALSE;
 
-	//hr = Create_BlendState_D3D11(pDevice);
-	//if (hr != S_OK) return S_FALSE;
+	hr = Create_BlendState_D3D11(pDevice);
+	if (hr != S_OK) return S_FALSE;
+
+	hr = Create_PSConstantBufferDynamic_D3D11(pDevice);
+	if (hr != S_OK) return S_FALSE;
 
 	return S_OK;
 }
@@ -211,13 +346,14 @@ void CElectricShock8::Release_D3D11()
 {
 	SAFE_RELEASE(pNewVertexBuffer);
 	SAFE_RELEASE(pPixelShader);
-	//SAFE_RELEASE(pBlendState);
+	SAFE_RELEASE(pBlendState);
+	SAFE_RELEASE(pPSConstantBuffer);
 }
 // -----------------------------------------------------------------------
 HRESULT CElectricShock8::Rendering_D3D11(ID3D11Device* pDevice, ID3D11DeviceContext* pDeviceContext, ID3D11RenderTargetView* pRenderTargetView, ID3D11ShaderResourceView* pTextureView, TVertex8* pVertices)
 {
 	HRESULT hr = S_FALSE;
-	
+
 #ifdef _DEBUG
 	InfoTexture2D InfoRTV = {};
 	InfoTexture2D InfoSRV = {};
@@ -225,30 +361,26 @@ HRESULT CElectricShock8::Rendering_D3D11(ID3D11Device* pDevice, ID3D11DeviceCont
 	hr = GetInfoFromShaderResourceView(pTextureView, &InfoSRV);
 #endif
 
+	DetectBeats();
+
 	hr = DrawDeck();
 	if (hr != S_OK) return S_FALSE;
 
 	D3DXCOLOR Color = {};
-	
-	double fbp = SongPosBeats - floor(SongPosBeats);
-	if (fbp >= 0 && fbp < m_length)
-	{
-		Color = { 1.0f, 1.0f, 1.0f, m_alpha };
-	}
-	else
-	{
-		Color = { 0.0f, 0.0f, 0.0f, m_alpha };
-	}
+	if (m_FX_Activate) Color = { 1.0f, 1.0f, 1.0f, m_alpha };
+	else Color = { 0.0f, 0.0f, 0.0f, m_alpha };
 
 	if (pRenderTargetView)
 	{
 		FLOAT backgroundColor[4] = { Color.r, Color.g ,Color.b ,Color.a };
 		pDeviceContext->ClearRenderTargetView(pRenderTargetView, backgroundColor);
-
 		pDeviceContext->OMSetRenderTargets(1, &pRenderTargetView, nullptr);
 	}
 
 	hr = Update_VertexBufferDynamic_D3D11(pDeviceContext);
+	if (hr != S_OK) return S_FALSE;
+
+	hr = Update_PSConstantBufferDynamic_D3D11(pDeviceContext);
 	if (hr != S_OK) return S_FALSE;
 
 	
@@ -256,18 +388,21 @@ HRESULT CElectricShock8::Rendering_D3D11(ID3D11Device* pDevice, ID3D11DeviceCont
 	{
 		pDeviceContext->PSSetShader(pPixelShader, nullptr, 0);
 	}
+
+	if (pPSConstantBuffer)
+	{
+		pDeviceContext->PSSetConstantBuffers(0, 1, &pPSConstantBuffer);
+	}
 	
 	if (pTextureView)
 	{
 		pDeviceContext->PSSetShaderResources(0, 1, &pTextureView);
 	}
 
-	/*
 	if (pBlendState)
 	{
-		pDeviceContext->OMSetBlendState(pBlendState, nullptr, 0xFFFFFFFF);
+		//pDeviceContext->OMSetBlendState(pBlendState, nullptr, 0xFFFFFFFF);
 	}
-	*/
 	
 	if (pNewVertexBuffer)
 	{
@@ -384,13 +519,15 @@ HRESULT CElectricShock8::Create_PixelShaderFromResourceCSOFile_D3D11(ID3D11Devic
 
 	hr = ReadResource(resourceType, resourceName, &BytecodeLength, &pShaderBytecode);
 	if (hr != S_OK) return S_FALSE;
-		
+	
 	hr = pDevice->CreatePixelShader(pShaderBytecode, BytecodeLength, nullptr, &pPixelShader);
 
 	return hr;
 }
+
+
 //-----------------------------------------------------------------------
-HRESULT CElectricShock8::ReadResource(const WCHAR* resourceType, const WCHAR* resourceName, SIZE_T* size, LPVOID *data)
+HRESULT CElectricShock8::ReadResource(const WCHAR* resourceType, const WCHAR* resourceName, SIZE_T* size, LPVOID* data)
 {
 	HRESULT hr = S_FALSE;
 
@@ -434,6 +571,60 @@ HRESULT CElectricShock8::Create_BlendState_D3D11(ID3D11Device* pDevice)
 	hr = pDevice->CreateBlendState(&BlendStateDesc, &pBlendState);
 
 	return hr;
+}
+//-----------------------------------------------------------------------
+HRESULT CElectricShock8::Create_PSConstantBufferDynamic_D3D11(ID3D11Device* pDevice)
+{
+	HRESULT hr = S_FALSE;
+
+	if (!pDevice) return E_FAIL;
+
+	UINT SIZEOF_PS_CONSTANTBUFFER = sizeof(PS_CONSTANTBUFFER);
+	UINT CB_BYTEWIDTH = SIZEOF_PS_CONSTANTBUFFER + 0xf & 0xfffffff0;
+
+	D3D11_BUFFER_DESC ConstantBufferDesc = {};
+	ConstantBufferDesc.Usage = D3D11_USAGE_DYNAMIC;  // CPU_Access=Write_Only & GPU_Access=Read_Only
+	ConstantBufferDesc.ByteWidth = CB_BYTEWIDTH;
+	ConstantBufferDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
+	ConstantBufferDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;  // Allow CPU to write in buffer
+	ConstantBufferDesc.MiscFlags = 0;
+
+	// Create the constant buffer to send to the cbuffer in hlsl file
+	hr = pDevice->CreateBuffer(&ConstantBufferDesc, nullptr, &pPSConstantBuffer);
+	if (hr != S_OK || !pPSConstantBuffer) return S_FALSE;
+
+	return hr;
+}
+//-----------------------------------------------------------------------
+HRESULT CElectricShock8::Update_PSConstantBufferDynamic_D3D11(ID3D11DeviceContext* ctx)
+{
+	HRESULT hr = S_FALSE;
+
+	if (!ctx) return S_FALSE;
+	if (!pPSConstantBuffer) return S_FALSE;
+
+	hr = Update_PSConstantBufferData_D3D11();
+
+	D3D11_MAPPED_SUBRESOURCE MappedSubResource;
+	ZeroMemory(&MappedSubResource, sizeof(D3D11_MAPPED_SUBRESOURCE));
+
+	hr = ctx->Map(pPSConstantBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &MappedSubResource);
+	if (hr != S_OK) return S_FALSE;
+
+	memcpy(MappedSubResource.pData, &m_PSConstantBufferData, sizeof(PS_CONSTANTBUFFER));
+
+	ctx->Unmap(pPSConstantBuffer, 0);
+
+	return S_OK;
+}
+//-----------------------------------------------------------------------
+HRESULT CElectricShock8::Update_PSConstantBufferData_D3D11()
+{
+	m_PSConstantBufferData.FX_Select = m_FX_Select;
+	m_PSConstantBufferData.FX_Activate = m_FX_Activate;
+	m_PSConstantBufferData.FX_Time = m_FX_Time;
+
+	return S_OK;
 }
 //-----------------------------------------------------------------------
 HRESULT CElectricShock8::GetInfoFromShaderResourceView(ID3D11ShaderResourceView* pShaderResourceView, InfoTexture2D* info)
@@ -513,3 +704,137 @@ HRESULT CElectricShock8::GetInfoFromRenderTargetView(ID3D11RenderTargetView* pRe
 
 	return S_OK;
 }
+//-----------------------------------------------------------------------
+void CElectricShock8::DetectBeats()
+{
+	double fbp = SongPosBeats - floor(SongPosBeats);
+	if (fbp >= 0 && fbp < m_length)
+	{
+		if (m_DetectLowFreq)
+		{
+			if (m_ref_freq <= m_minFreq)
+			{
+				m_FX_Activate = 1;
+			}
+			else
+			{
+				m_FX_Activate = 0;
+			}
+		}
+		else
+		{
+			m_FX_Activate = 1;
+		}
+	}
+	else
+	{
+		m_FX_Activate = 0;
+	}
+
+	if ((SongPosBeats != m_SongPosBeatsPrevious) && (m_FX_Activate == 1) && (m_FX_Activate_Previous == 0))
+	{
+		m_SongPosBeatsPrevious = SongPosBeats;
+		
+		float FX_Time_New = (m_FX_Time == 0.0f) ? 1.0f : 0.0f;
+		if (FX_Time_New != m_FX_Time_Previous)
+		{
+			m_FX_Time = !m_FX_Time;
+
+			if (m_FX_Select_Random)
+			{
+				/*
+				if ((m_FX_Select + 1) > FX_RANDOM_END) m_FX_Select = FX_RANDOM_START;
+				else m_FX_Select = m_FX_Select + 1;
+				*/
+				
+				// Create a random number generator
+				random_device rd;  // Seed
+				mt19937 gen(rd()); // Mersenne Twister engine
+				uniform_int_distribution<> dist(FX_RANDOM_START, FX_RANDOM_END);
+
+				m_FX_Select = dist(gen); // Set m_FX_Select to a random value
+			}
+
+			m_FX_Time_Previous = m_FX_Time;
+		}
+	}
+
+	m_FX_Activate_Previous = m_FX_Activate;
+
+#ifdef _DEBUG
+	char debug_fx[50];
+	sprintf_s(debug_fx, 50 * sizeof(char), "SongPosBeats = %.3f", float(SongPosBeats));
+	OutputDebugStringA(debug_fx);
+	OutputDebugStringA("\n");
+	sprintf_s(debug_fx, 50 * sizeof(char), "m_FX_Select = %d", m_FX_Select);
+	OutputDebugStringA(debug_fx);
+	OutputDebugStringA("\n");
+	sprintf_s(debug_fx, 50 * sizeof(char), "m_FX_Activate = %d", m_FX_Activate);
+	OutputDebugStringA(debug_fx);
+	OutputDebugStringA("\n");
+	sprintf_s(debug_fx, 50 * sizeof(char), "m_FX_Time = %.2f", m_FX_Time);
+	OutputDebugStringA(debug_fx);
+	OutputDebugStringA("\n\n");
+#endif
+}
+//-----------------------------------------------------------------------
+#ifdef USE_FFT
+void CElectricShock8::ComputeFFT(float* buffer, int nb, int fft_size)
+{
+	int mono_input_size = min(nb, fft_size);
+	vector<float> mono_input(fft_size, 0.0f);
+	float inLeft = 0.0f;
+	float inRight = 0.0f;
+	float magnitude = 0.0f;
+	float max_amplitude = 0.0f;
+	int ref_j = 0;
+	float real = 0.0f; 
+	float imag = 0.0f;
+
+	// We convert the signal to mono first
+	for (int i = 0; i < mono_input_size; ++i)
+	{
+		inLeft = buffer[2 * i];     // Left Channel
+		inRight = buffer[2 * i + 1]; // Right Channel
+		mono_input[i] = 0.5f * (inLeft + inRight); // Average to mono
+	}
+
+	// We compute the FFT
+	int half = fft_size / 2;
+	size_t n = half + 1;
+	float* in = fftwf_alloc_real(fft_size);
+	fftwf_complex* out = fftwf_alloc_complex(n);
+
+	copy(mono_input.begin(), mono_input.end(), in);
+
+	fftwf_plan plan = fftwf_plan_dft_r2c_1d(fft_size, in, out, FFTW_ESTIMATE);
+	fftwf_execute(plan);
+
+	for (int i = 0; i <= half; ++i)
+	{
+		real = out[i][0];
+		imag = out[i][1];
+		magnitude = sqrtf(SQ(real)+ SQ(imag));
+
+		if (magnitude > max_amplitude)
+		{
+			max_amplitude = magnitude;
+			ref_j = i;
+		}
+	}
+
+	if (max_amplitude == 0)
+	{
+		m_ref_freq = 0;
+	}
+	else
+	{
+		m_ref_freq = (float(ref_j) * float(SampleRate)) / float(fft_size);
+	}
+
+	// We clean
+	fftwf_destroy_plan(plan);
+	fftwf_free(in);
+	fftwf_free(out);
+}
+#endif
