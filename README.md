@@ -11,7 +11,6 @@ FFT computation uses the FFTW libary. You can download it with vcpkg
 
 To install the FFTW libary (static library):
 ```powershell
-cd C:\vcpkg
 vcpkg install fftw3:x64-windows-static
 ```
 
