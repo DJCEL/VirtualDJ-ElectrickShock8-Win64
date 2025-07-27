@@ -6,3 +6,12 @@ A VirtualDJ Video Effect for Windows 64-bit (.dll)
 WARNING - READ THIS NOTICE BEFORE USING THIS PLUGIN:
 
 A very small percentage of people may experience epileptic seizures or blackouts when exposed to certain kinds of flashing lights or light patterns.
+
+FFT computation uses the FFTW libary. You can download it with vcpkg
+
+To install FFTW libary (static library):
+```powershell
+cd C:\vcpkg
+vcpkg install fftw3:x64-windows-static
+```
+
