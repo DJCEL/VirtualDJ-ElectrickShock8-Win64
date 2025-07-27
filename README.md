@@ -3,10 +3,6 @@
 # VirtualDJ-ElectrickShock8-Win64
 A VirtualDJ Video Effect for Windows 64-bit (.dll)
 
-WARNING - READ THIS NOTICE BEFORE USING THIS PLUGIN:
-
-A very small percentage of people may experience epileptic seizures or blackouts when exposed to certain kinds of flashing lights or light patterns.
-
 We use the [FFTW](https://www.fftw.org/) libary. You can download it with vcpkg
 
 To install the FFTW libary (static library):
@@ -14,3 +10,6 @@ To install the FFTW libary (static library):
 vcpkg install fftw3:x64-windows-static
 ```
 
+WARNING - READ THIS NOTICE BEFORE USING THIS PLUGIN:
+
+A very small percentage of people may experience epileptic seizures or blackouts when exposed to certain kinds of flashing lights or light patterns.
