@@ -47,7 +47,7 @@ float4 Negative(float4 color)
     return color;
 }
 //--------------------------------------------------------------------------------------
-float Triangle(float2 texcoord)
+float4 Triangle(float2 texcoord)
 {
     float x = texcoord.x;
     float y = texcoord.y;
@@ -66,12 +66,11 @@ float Triangle(float2 texcoord)
         if (y >= f2_x)
             value = 1.0f;
     }
-        
-    return value;
+    float4 color = float4(value, value, value, 1.0);
+    return color;
 }
-
 //--------------------------------------------------------------------------------------
-float Circle(float2 texcoord, float radius)
+float4 Circle(float2 texcoord, float radius)
 {
     float value = 0.0f;
     float x = texcoord.x;
@@ -95,7 +94,8 @@ float Circle(float2 texcoord, float radius)
             value = 1.0f;
     }
     
-    return value;
+    float4 color = float4(value, value, value, 1.0);
+    return color;
 }
 //--------------------------------------------------------------------------------------
 float Bands(float x, int nb, bool inverted)
@@ -122,8 +122,7 @@ float4 FX_Triangle(int FX_On, float2 texcoord)
     
     if (FX_On == 1)
     {
-        float val = Triangle(texcoord);
-        color = float4(val, val, val, 1.0);
+        color = Triangle(texcoord);
     }
    
     return color;
@@ -135,8 +134,7 @@ float4 FX_Circle(int FX_On, float2 texcoord, float radius)
     
     if (FX_On == 1)
     {
-        float val = Circle(texcoord, radius);
-        color = float4(val, val, val, 1.0);
+        color = Circle(texcoord, radius);
     }
    
     return color;
