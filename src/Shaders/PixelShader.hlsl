@@ -83,12 +83,12 @@ float4 Circle(float2 texcoord, float radius)
     float f1_x = sqrt(SQ(radius) - SQ(x)); // half circle up
     float f2_x = f1_x * (-1.0f); // half circle down
     
-    if (y > 0)
+    if (y >= 0)
     {
         if (y <= f1_x)
             value = 1.0f;
     }
-    else if (y <= 0)
+    else if (y < 0)
     {
         if (y >= f2_x)
             value = 1.0f;
