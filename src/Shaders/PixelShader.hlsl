@@ -101,7 +101,7 @@ float4 Circle_faster(float2 texcoord, float radius)
     // Translate texcoord to center (0, 0)
     float2 centered = texcoord - 0.5;
 
-    // Compute squared distance from center [=SQ(x)+SQ(y)]
+    // Compute squared distance from center [=SQ(centered.x)+SQ(centered.y)]
     float distSquared = dot(centered, centered);
 
     // Compute squared radius
