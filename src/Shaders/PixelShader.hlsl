@@ -73,12 +73,12 @@ float4 Triangle(float2 texcoord)
 float4 Circle(float2 texcoord, float radius)
 {
     float value = 0.0f;
-    float x = texcoord.x;
-    float y = texcoord.y;
+
+    // Translate texcoord to center (0, 0)
+    float2 centered = texcoord - 0.5;
     
-    // translation to center the circle in (0,0)
-    x -= 0.5f;
-    y -= 0.5f;
+    float x = centered.x;
+    float y = centered.y;
     
     float f1_x = sqrt(SQ(radius) - SQ(x)); // half circle up
     float f2_x = f1_x * (-1.0f); // half circle down
