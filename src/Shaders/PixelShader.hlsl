@@ -99,6 +99,20 @@ float4 Circle(float2 texcoord, float radius)
     return color;
 }
 //--------------------------------------------------------------------------------------
+float4 Circle_faster(float2 texcoord, float radius)
+{
+    // Translate texcoord to center (0, 0)
+    float2 centered = texcoord - 0.5;
+
+    // Compute squared distance from center
+    float distSquared = dot(centered, centered);
+
+    // Inside the circle if distSquared <= radiusSquared
+    float value = (distSquared <= SQ(radius)) ? 1.0 : 0.0;
+
+    return float4(value, value, value, 1.0);
+}
+//--------------------------------------------------------------------------------------
 float Bands(float x, int nb, bool inverted)
 {
     float2 val = x * nb;
