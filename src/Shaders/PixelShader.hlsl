@@ -107,8 +107,11 @@ float4 Circle_faster(float2 texcoord, float radius)
     // Compute squared distance from center
     float distSquared = dot(centered, centered);
 
+    // Compute squared radius
+    float radiusSquared = SQ(radius);
+    
     // Inside the circle if distSquared <= radiusSquared
-    float value = (distSquared <= SQ(radius)) ? 1.0 : 0.0;
+    float value = (distSquared <= radiusSquared) ? 1.0 : 0.0;
 
     return float4(value, value, value, 1.0);
 }
