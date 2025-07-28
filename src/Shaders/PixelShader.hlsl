@@ -75,13 +75,13 @@ float4 Circle(float2 texcoord, float radius)
     // Translate texcoord to center (0, 0)
     float2 centered = texcoord - 0.5;
     
-    float value = 0.0f;
     float x = centered.x;
     float y = centered.y;
     
     float f1_x = sqrt(SQ(radius) - SQ(x)); // half circle up
     float f2_x = f1_x * (-1.0f); // half circle down
     
+    float value = 0.0f;
     if (y >= 0)
     {
         if (y <= f1_x)
