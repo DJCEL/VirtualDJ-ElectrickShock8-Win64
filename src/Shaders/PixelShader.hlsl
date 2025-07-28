@@ -67,8 +67,7 @@ float4 Triangle(float2 texcoord)
             value = 1.0f;
     }
 
-    float4 color = float4(value, value, value, 1.0);
-    return color;
+    return float4(value, value, value, 1.0);
 }
 //--------------------------------------------------------------------------------------
 float4 Circle(float2 texcoord, float radius)
@@ -95,8 +94,7 @@ float4 Circle(float2 texcoord, float radius)
             value = 1.0f;
     }
     
-    float4 color = float4(value, value, value, 1.0);
-    return color;
+    return float4(value, value, value, 1.0);
 }
 //--------------------------------------------------------------------------------------
 float4 Circle_faster(float2 texcoord, float radius)
