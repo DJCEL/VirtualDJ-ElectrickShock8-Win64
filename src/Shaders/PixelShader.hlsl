@@ -66,6 +66,7 @@ float4 Triangle(float2 texcoord)
         if (y >= f2_x)
             value = 1.0f;
     }
+
     float4 color = float4(value, value, value, 1.0);
     return color;
 }
