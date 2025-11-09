@@ -47,6 +47,116 @@ float4 Negative(float4 color)
     return color;
 }
 //--------------------------------------------------------------------------------------
+float4 NegativeAdv1(float4 color)
+{
+    float3 col = color.rgb;
+    float3 color_black = float3(0.0, 0.0, 0.0);
+    float3 delta = abs(col - color_black);
+    float tolerance = 0.1;
+    
+    // Check if the difference is within the tolerance
+    if (all(delta <= tolerance))
+    {
+        color.rgb = 1 - col;
+    }
+    
+    return color;
+}
+//--------------------------------------------------------------------------------------
+float4 NegativeAdv2(float4 color)
+{
+    float3 col = color.rgb;
+    float3 color_black = float3(0.0, 0.0, 0.0);
+    float3 delta = abs(col - color_black);
+    float tolerance = 0.1;
+    
+    // Check if the difference is within the tolerance
+    if (all(delta >= tolerance))
+    {
+        color.rgb = 1 - col;
+    }
+    
+    return color;
+}
+//--------------------------------------------------------------------------------------
+float4 NegativeAdv3(float4 color)
+{
+    float3 col = color.rgb;
+    float3 color_white = float3(1.0, 1.0, 1.0);
+    float3 delta = abs(col - color_white);
+    float tolerance = 0.1;
+    
+    // Check if the difference is within the tolerance
+    if (all(delta <= tolerance))
+    {
+        color.rgb = 1 - col;
+    }
+    
+    return color;
+}
+//--------------------------------------------------------------------------------------
+float4 NegativeAdv4(float4 color)
+{
+    float3 col = color.rgb;
+    float3 color_white = float3(1.0, 1.0, 1.0);
+    float3 delta = abs(col - color_white);
+    float tolerance = 0.1;
+    
+    // Check if the difference is within the tolerance
+    if (all(delta >= tolerance))
+    {
+        color.rgb = 1 - col;
+    }
+    
+    return color;
+}
+//--------------------------------------------------------------------------------------
+float sRGBtoLinearRGB(float color)
+{
+    // Send this function a decimal sRGB gamma encoded color value
+    // between 0.0 and 1.0, and it returns a linearized value.
+
+    if (color <= 0.04045)
+    {
+        return color / 12.92;
+    }
+    else
+    {
+        return pow(((color + 0.055) / 1.055), 2.4);
+    }
+}
+//--------------------------------------------------------------------------------------
+float4 NegativeAdv5(float4 color)
+{
+    const float Threshold = 0.7; // brightness threshold (0–1)
+    const float Softness = 0.2; // smooth transition range
+    const float Time = 0.0; // <-- override this from CPU if needed
+    const float Frequency = 2.0; // flashes per second
+    const float Intensity = 1.5; // how strong the flash is
+    const float3 TintColor = float3(0.3, 1.0, 0.9); // flash color (cyan)
+    
+    // luminance (brightness): 
+    //float luminance = 0.2126 * sRGBtoLinearRGB(color.r) + 0.7152 * sRGBtoLinearRGB(color.g) + 0.0722 * sRGBtoLinearRGB(color.b);
+    const float3 LUMINANCE_WEIGHTS = float3(0.2126, 0.7152, 0.0722);
+    float luminance = dot(color.rgb, LUMINANCE_WEIGHTS);
+
+    // only affect highlights
+    float mask = smoothstep(Threshold, Threshold + Softness, luminance);
+
+    // flash pulse (0–1)
+    float flash = 0.5 * (sin(Time * Frequency * 6.28318) + 1.0);
+
+    // apply color only to highlights
+    float3 flashColor = TintColor * flash * Intensity * mask;
+
+    // additive blend with original
+    color.rgb += flashColor;
+
+    color = saturate(color);
+    
+    return color; 
+}
+//--------------------------------------------------------------------------------------
 float4 Triangle(float2 texcoord)
 {
     float x = texcoord.x;
@@ -126,6 +236,57 @@ float4 FX_Negative(int FX_On, float4 color)
     if (FX_On == 1)
     {
         color = Negative(color);
+    }
+    
+    return color;
+}
+
+//--------------------------------------------------------------------------------------
+float4 FX_NegativeAdv1(int FX_On, float4 color)
+{
+    if (FX_On == 1)
+    {
+        color = NegativeAdv1(color);
+    }
+    
+    return color;
+}
+//--------------------------------------------------------------------------------------
+float4 FX_NegativeAdv2(int FX_On, float4 color)
+{
+    if (FX_On == 1)
+    {
+        color = NegativeAdv2(color);
+    }
+    
+    return color;
+}
+//--------------------------------------------------------------------------------------
+float4 FX_NegativeAdv3(int FX_On, float4 color)
+{
+    if (FX_On == 1)
+    {
+        color = NegativeAdv3(color);
+    }
+    
+    return color;
+}
+//--------------------------------------------------------------------------------------
+float4 FX_NegativeAdv4(int FX_On, float4 color)
+{
+    if (FX_On == 1)
+    {
+        color = NegativeAdv4(color);
+    }
+    
+    return color;
+}
+//--------------------------------------------------------------------------------------
+float4 FX_NegativeAdv5(int FX_On, float4 color)
+{
+    if (FX_On == 1)
+    {
+        color = NegativeAdv5(color);
     }
     
     return color;
@@ -306,6 +467,26 @@ PS_OUTPUT ps_main(PS_INPUT input)
     else if (FX_Select == 23)
     {
         color = FX_Circle(FX_Activate, texcoord, 0.4f);
+    }
+    else if (FX_Select == 24)
+    {
+        color = FX_NegativeAdv1(FX_Activate, color);
+    }
+    else if (FX_Select == 25)
+    {
+        color = FX_NegativeAdv2(FX_Activate, color);
+    }
+    else if (FX_Select == 26)
+    {
+        color = FX_NegativeAdv3(FX_Activate, color);
+    }
+    else if (FX_Select == 27)
+    {
+        color = FX_NegativeAdv4(FX_Activate, color);
+    }
+    else if (FX_Select == 28)
+    {
+        color = FX_NegativeAdv5(FX_Activate, color);
     }
     
     output.Color = color * input.Color;

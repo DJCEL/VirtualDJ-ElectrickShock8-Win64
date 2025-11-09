@@ -178,7 +178,7 @@ private:
 		const int ID_SLIDER_MAX = ID_SLIDER_4;
 	#endif
 
-	const UINT MAX_FX = 23;
+	const UINT MAX_FX = 28;
 
 	const int FX_RANDOM_START = 2;
 	const int FX_RANDOM_END = MAX_FX;

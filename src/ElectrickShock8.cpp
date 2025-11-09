@@ -65,7 +65,7 @@ HRESULT VDJ_API CElectrickShock8::OnGetPluginInfo(TVdjPluginInfo8 *info)
 	info->PluginName = "ElectrickShock8";
 	info->Description = "It acts like a negative effect at each beat.";
 	info->Flags = 0x00; // VDJFLAG_VIDEO_OUTPUTRESOLUTION | VDJFLAG_VIDEO_OUTPUTASPECTRATIO;
-	info->Version = "2.0 (64-bit)";
+	info->Version = "2.0.1 (64-bit)";
 
 	return S_OK;
 }
@@ -227,6 +227,26 @@ HRESULT VDJ_API CElectrickShock8::OnGetParameterString(int id, char* outParam, i
 
 				case 23:
 					sprintf_s(outParam, outParamSize, "Circle");
+					break;
+
+				case 24:
+					sprintf_s(outParam, outParamSize, "NegativeAdv1");
+					break;
+
+				case 25:
+					sprintf_s(outParam, outParamSize, "NegativeAdv2");
+					break;
+
+				case 26:
+					sprintf_s(outParam, outParamSize, "NegativeAdv3");
+					break;
+
+				case 27:
+					sprintf_s(outParam, outParamSize, "NegativeAdv4");
+					break;
+
+				case 28:
+					sprintf_s(outParam, outParamSize, "NegativeAdv5");
 					break;
 			}
 			break;
