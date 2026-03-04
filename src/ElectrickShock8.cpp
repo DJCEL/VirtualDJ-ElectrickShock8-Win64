@@ -64,7 +64,7 @@ HRESULT VDJ_API CElectrickShock8::OnGetPluginInfo(TVdjPluginInfo8 *info)
 	info->Author = "djcel";
 	info->PluginName = "ElectrickShock8";
 	info->Description = "It acts like a negative effect at each beat.";
-	info->Flags = 0x00; // VDJFLAG_VIDEO_OUTPUTRESOLUTION | VDJFLAG_VIDEO_OUTPUTASPECTRATIO;
+	info->Flags = 0x00; // VDJFLAG_VIDEO_OVERLAY // VDJFLAG_VIDEO_OUTPUTRESOLUTION | VDJFLAG_VIDEO_OUTPUTASPECTRATIO;
 	info->Version = "2.0.1 (64-bit)";
 
 	return S_OK;
@@ -857,4 +857,5 @@ void CElectrickShock8::ComputeFFT(float* buffer, int nb, int fft_size)
 	fftwf_free(in);
 	fftwf_free(out);
 }
+
 #endif
