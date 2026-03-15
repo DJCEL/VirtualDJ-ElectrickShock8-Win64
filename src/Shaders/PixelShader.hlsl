@@ -12,9 +12,11 @@ SamplerState g_SamplerState : register(s0);
 //--------------------------------------------------------------------------------------
 cbuffer PS_CONSTANTBUFFER : register(b0)
 {
+    float g_FX_Time;
+    float g_FX_SongPosBeats;
     int g_FX_Select;
     int g_FX_Activate;
-    float g_FX_Time;
+    float g_FX_Inverted;
 };
 //--------------------------------------------------------------------------------------
 // Input structure
@@ -365,20 +367,102 @@ float4 FX_BiBandsInv(int FX_On, float2 texcoord, int nb, bool inverted)
     return color;
 }
 //--------------------------------------------------------------------------------------
+float hash(float n)
+{
+    return frac(sin(n) * 43758.5453123);
+}
+//--------------------------------------------------------------------------------------
+float beatPulse(float beat)
+{
+    float adjustCoeff = 25.0; // or 20.0 or 30.0
+    
+    const float PI = 3.14159265;
+    float pulse = pow(max(0.0, sin(beat * PI)), adjustCoeff);
+    
+    return pulse;
+}
+//--------------------------------------------------------------------------------------
+float4 FX_ClubStrobe(float2 texcoord, float t, float beat)
+{
+    float2 uv = texcoord;
+    float2 center = float2(0.5f, 0.5f);
+    float2 p = uv - center;
+    
+    // ultra sharp flash
+    float pulse = beatPulse(beat);
+    
+    // radial distance
+    float dist = length(p);
+    
+    // glow burst (simulate a light explosition from the center)
+    float burst = exp(-dist * 8.0);
+    
+    // rotating beams (creates rotating club-style rays)
+    float angle = atan2(p.y, p.x);
+    float beams = sin(angle * 16.0 + t * 8.0);
+    beams = pow(abs(beams), 6.0);
+    
+    // distorsion during flash
+    float2 distort = p * (1.0 + pulse * 0.3);
+    float distorsion = length(distort);
+    
+    // random flicker
+    float flicker = hash(floor(t * 40.0));
+    
+    float flash = pulse * (1.5 + burst * 2.5 + beams * 1.50);
+    
+    float3 col = float3(flash, flash, flash);
+    
+    // chromatic strobe effect
+    col.r += pulse * 0.2 * distorsion;
+    col.b -= pulse * 0.2 * distorsion;
+    
+    // flicker boost
+    col *= 1.0 + flicker * 0.2 * pulse;
+    
+    float4 color = float4(col.r, col.g, col.b, 1.0);
+    
+    return color;
+}
+//--------------------------------------------------------------------------------------
+float4 FX_XenonStrobe(float beat)
+{
+    float pulse = beatPulse(beat + 0.5f);
+    float flash = pulse * 5.0;
+    //float flash = pow(pulse, 2.0) * 8.0;
+    
+    float4 color = float4(flash, flash, flash, 1.0);
+    
+    return color;
+}
+//--------------------------------------------------------------------------------------
+float4 FX_XenonStrobe(float beat)
+{
+    float pulse = beatPulse(beat + 0.5f);
+    float flash = pulse * 5.0;
+    
+    float4 color = float4(flash, flash, flash, 1.0);
+    
+    return color;
+}
+//--------------------------------------------------------------------------------------
 // Pixel Shader
 //--------------------------------------------------------------------------------------
 PS_OUTPUT ps_main(PS_INPUT input)
 {
-    PS_OUTPUT output;
-    float2 texcoord = input.TexCoord;
-    float4 color = g_Texture2D.Sample(g_SamplerState, texcoord);
     int FX_Select = g_FX_Select;
     int FX_Activate = g_FX_Activate;
-    bool FX_Inverted = (g_FX_Time == 1.0) ? true : false;
-
+    bool FX_Inverted = (g_FX_Inverted == 1.0) ? true : false;
+    float iTime = g_FX_Time;
+    float iBeat = g_FX_SongPosBeats;
+    
+    float2 texcoord = input.TexCoord;
+    float4 colorIn = g_Texture2D.Sample(g_SamplerState, texcoord);
+    float4 color = float4(0, 0, 0, 0);
+    
     if (FX_Select == 1)
     {
-        color = FX_Negative(FX_Activate, color);
+        color = FX_Negative(FX_Activate, colorIn);
     }
     else if (FX_Select == 2)
     {
@@ -470,25 +554,34 @@ PS_OUTPUT ps_main(PS_INPUT input)
     }
     else if (FX_Select == 24)
     {
-        color = FX_NegativeAdv1(FX_Activate, color);
+        color = FX_NegativeAdv1(FX_Activate, colorIn);
     }
     else if (FX_Select == 25)
     {
-        color = FX_NegativeAdv2(FX_Activate, color);
+        color = FX_NegativeAdv2(FX_Activate, colorIn);
     }
     else if (FX_Select == 26)
     {
-        color = FX_NegativeAdv3(FX_Activate, color);
+        color = FX_NegativeAdv3(FX_Activate, colorIn);
     }
     else if (FX_Select == 27)
     {
-        color = FX_NegativeAdv4(FX_Activate, color);
+        color = FX_NegativeAdv4(FX_Activate, colorIn);
     }
     else if (FX_Select == 28)
     {
-        color = FX_NegativeAdv5(FX_Activate, color);
+        color = FX_NegativeAdv5(FX_Activate, colorIn);
+    }
+    else if (FX_Select == 29)
+    {
+        color = FX_ClubStrobe(texcoord, iTime, iBeat);
+    }
+    else if (FX_Select == 30)
+    {
+        color = FX_XenonStrobe(iBeat);
     }
     
+    PS_OUTPUT output;
     output.Color = color * input.Color;
     return output;
 }

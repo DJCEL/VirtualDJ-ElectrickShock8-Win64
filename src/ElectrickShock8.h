@@ -8,7 +8,7 @@
 #include <d3d11.h>
 #pragma comment(lib, "d3d11.lib")
 #include <random> // Required for random
-
+#include <chrono>
 
 #define USE_FFT // uncomment this line to enable the use of FFT (Fast Fourier Transform)
 
@@ -91,16 +91,20 @@ private:
 	};
 
 	__declspec(align(16))
-		struct PS_CONSTANTBUFFER
+	struct PS_CONSTANTBUFFER
 	{
+		float FX_Time; // shader playback time
+		float FX_SongPosBeats;
 		int FX_Select;
 		int FX_Activate;
-		float FX_Time;
+		float FX_Inverted;
 	};
 
 	void OnResizeVideo();
 	void OnSlider(int id);
 	void DetectBeats();
+	long long GetCurrentTimeMilliseconds();
+	void setShaderPlaybackTime();
 	HRESULT ReadResource(const WCHAR* resourceType, const WCHAR* resourceName, SIZE_T* size, LPVOID* data);
 	#ifdef USE_FFT
 		void ComputeFFT(float* buffer, int nb, int fft_size);
@@ -139,6 +143,8 @@ private:
 	int m_HeightOnDeviceInit;
 	int m_Width;
 	int m_Height;
+	long long m_TimeInit;
+	float m_Time;
 	float m_SliderValue[5];
 	float m_alpha;
 	float m_VideoScale;
@@ -178,7 +184,7 @@ private:
 		const int ID_SLIDER_MAX = ID_SLIDER_4;
 	#endif
 
-	const UINT MAX_FX = 28;
+	const UINT MAX_FX = 30;
 
 	const int FX_RANDOM_START = 2;
 	const int FX_RANDOM_END = MAX_FX;

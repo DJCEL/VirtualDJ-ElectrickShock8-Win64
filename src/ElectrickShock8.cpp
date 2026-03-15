@@ -33,6 +33,8 @@ CElectrickShock8::CElectrickShock8()
 	m_FX_Time = 0.0f;
 	m_FX_Time_Previous = 0;
 	m_FX_Select_Random = 0;
+	m_Time = 0.0f;
+	m_TimeInit = 0;
 }
 //------------------------------------------------------------------------------------------
 CElectrickShock8::~CElectrickShock8()
@@ -65,7 +67,7 @@ HRESULT VDJ_API CElectrickShock8::OnGetPluginInfo(TVdjPluginInfo8 *info)
 	info->PluginName = "ElectrickShock8";
 	info->Description = "It acts like a negative effect at each beat.";
 	info->Flags = 0x00; // VDJFLAG_VIDEO_OVERLAY // VDJFLAG_VIDEO_OUTPUTRESOLUTION | VDJFLAG_VIDEO_OUTPUTASPECTRATIO;
-	info->Version = "2.0.1 (64-bit)";
+	info->Version = "2.1.0 (64-bit)";
 
 	return S_OK;
 }
@@ -248,6 +250,14 @@ HRESULT VDJ_API CElectrickShock8::OnGetParameterString(int id, char* outParam, i
 				case 28:
 					sprintf_s(outParam, outParamSize, "NegativeAdv5");
 					break;
+
+				case 29:
+					sprintf_s(outParam, outParamSize, "ClubStrobo");
+					break;
+
+				case 30:
+					sprintf_s(outParam, outParamSize, "XenonStrobe");
+					break;
 			}
 			break;
 
@@ -289,11 +299,16 @@ HRESULT VDJ_API CElectrickShock8::OnDeviceClose()
 //-------------------------------------------------------------------------------------------
 HRESULT VDJ_API CElectrickShock8::OnStart() 
 {
+	m_TimeInit = GetCurrentTimeMilliseconds();
+
 	return S_OK;
 }
 //-------------------------------------------------------------------------------------------
 HRESULT VDJ_API CElectrickShock8::OnStop() 
 {
+	m_Time = 0.0f;
+	m_TimeInit = 0;
+
 	return S_OK;
 }
 //-------------------------------------------------------------------------------------------
@@ -302,6 +317,8 @@ HRESULT VDJ_API CElectrickShock8::OnDraw()
 	HRESULT hr = S_FALSE;
 	ID3D11ShaderResourceView *pTexture = nullptr;
 	TVertex8* vertices = nullptr;
+
+	setShaderPlaybackTime();
 
 	if (width != m_Width || height != m_Height)
 	{
@@ -335,6 +352,22 @@ HRESULT VDJ_API CElectrickShock8::OnAudioSamples(float* buffer, int nb)
 	#else
 		return E_NOTIMPL;
 	#endif
+}
+//-----------------------------------------------------------------------
+long long CElectrickShock8::GetCurrentTimeMilliseconds()
+{
+	std::chrono::time_point time = std::chrono::system_clock::now();
+	std::chrono::duration since_epoch = time.time_since_epoch();
+	long long milliseconds = std::chrono::duration_cast<std::chrono::milliseconds>(since_epoch).count();
+
+	return milliseconds;
+}
+//-----------------------------------------------------------------------
+void CElectrickShock8::setShaderPlaybackTime()
+{
+	long long TimeNow = GetCurrentTimeMilliseconds();
+
+	m_Time = (TimeNow - m_TimeInit) / 1000.0f;
 }
 //-----------------------------------------------------------------------
 void CElectrickShock8::OnResizeVideo()
@@ -544,8 +577,6 @@ HRESULT CElectrickShock8::Create_PixelShaderFromResourceCSOFile_D3D11(ID3D11Devi
 
 	return hr;
 }
-
-
 //-----------------------------------------------------------------------
 HRESULT CElectrickShock8::ReadResource(const WCHAR* resourceType, const WCHAR* resourceName, SIZE_T* size, LPVOID* data)
 {
@@ -640,9 +671,11 @@ HRESULT CElectrickShock8::Update_PSConstantBufferDynamic_D3D11(ID3D11DeviceConte
 //-----------------------------------------------------------------------
 HRESULT CElectrickShock8::Update_PSConstantBufferData_D3D11()
 {
+	m_PSConstantBufferData.FX_Time = float(m_Time);
+	m_PSConstantBufferData.FX_SongPosBeats = (SongPosBeats < 0) ? 0.0f : float(SongPosBeats);
 	m_PSConstantBufferData.FX_Select = m_FX_Select;
 	m_PSConstantBufferData.FX_Activate = m_FX_Activate;
-	m_PSConstantBufferData.FX_Time = m_FX_Time;
+	m_PSConstantBufferData.FX_Inverted = float(m_Time);
 
 	return S_OK;
 }
