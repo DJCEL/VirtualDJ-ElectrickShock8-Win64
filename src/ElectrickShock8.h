@@ -97,7 +97,7 @@ private:
 		float FX_SongPosBeats;
 		int FX_Select;
 		int FX_Activate;
-		float FX_Inverted;
+		int FX_Inverted;
 	};
 
 	void OnResizeVideo();
@@ -184,7 +184,7 @@ private:
 		const int ID_SLIDER_MAX = ID_SLIDER_4;
 	#endif
 
-	const UINT MAX_FX = 30;
+	const UINT MAX_FX = 31;
 
 	const int FX_RANDOM_START = 2;
 	const int FX_RANDOM_END = MAX_FX;

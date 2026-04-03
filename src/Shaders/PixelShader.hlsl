@@ -16,7 +16,7 @@ cbuffer PS_CONSTANTBUFFER : register(b0)
     float g_FX_SongPosBeats;
     int g_FX_Select;
     int g_FX_Activate;
-    float g_FX_Inverted;
+    int g_FX_Inverted;
 };
 //--------------------------------------------------------------------------------------
 // Input structure
@@ -382,7 +382,33 @@ float beatPulse(float beat)
     return pulse;
 }
 //--------------------------------------------------------------------------------------
-float4 FX_ClubStrobe(float2 texcoord, float t, float beat)
+float flash(float beat, float speed)
+{
+    // speed :  2 for 2 flashes per beat   or 4 for 4 flashes per beat
+    
+    float phase = frac(beat * speed);
+    float flash = 1.0 - smoothstep(0.0, 0.05, phase);
+   
+    return flash;
+}
+
+//--------------------------------------------------------------------------------------
+float multi_pulses(float beat, float speed)
+{
+    float phase1 = frac(beat);
+    float phase2 = frac(beat * 2.0);
+    float phase3 = frac(beat * 4.0);
+   
+    float flash1 = 1.0 - smoothstep(0.0, 0.07, phase1);
+    float flash2 = 1.0 - smoothstep(0.0, 0.05, phase2);
+    float flash3 = 1.0 - smoothstep(0.0, 0.03, phase3);
+   
+    float strobe = flash1 * 2.0 + flash2 * 0.8 + flash3 * 0.3;
+    
+    return strobe;
+}
+//--------------------------------------------------------------------------------------
+float4 FX_ClubStrobe(float2 texcoord, float time, float beat)
 {
     float2 uv = texcoord;
     float2 center = float2(0.5f, 0.5f);
@@ -391,38 +417,50 @@ float4 FX_ClubStrobe(float2 texcoord, float t, float beat)
     // ultra sharp flash
     float pulse = beatPulse(beat);
     
-    // radial distance
-    float dist = length(p);
-    
     // glow burst (simulate a light explosition from the center)
+    float dist = length(p);
     float burst = exp(-dist * 8.0);
     
     // rotating beams (creates rotating club-style rays)
     float angle = atan2(p.y, p.x);
-    float beams = sin(angle * 16.0 + t * 8.0);
+    float beams = sin(angle * 16.0 + time * 8.0);
     beams = pow(abs(beams), 6.0);
+
+    // we combine pulse, burst and beams
+    float flash = pulse * 1.5 + burst * pulse * 2.5 + beams * pulse * 1.5;
+    float3 col = float3(flash, flash, flash);
     
     // distorsion during flash
     float2 distort = p * (1.0 + pulse * 0.3);
     float distorsion = length(distort);
-    
-    // random flicker
-    float flicker = hash(floor(t * 40.0));
-    
-    float flash = pulse * (1.5 + burst * 2.5 + beams * 1.50);
-    
-    float3 col = float3(flash, flash, flash);
-    
-    // chromatic strobe effect
     col.r += pulse * 0.2 * distorsion;
     col.b -= pulse * 0.2 * distorsion;
     
     // flicker boost
+    float flicker = hash(floor(time * 40.0));
     col *= 1.0 + flicker * 0.2 * pulse;
     
     float4 color = float4(col.r, col.g, col.b, 1.0);
     
     return color;
+}
+//--------------------------------------------------------------------------------------
+float4 FX_RaveTunnel(float2 texcoord, float time)
+{
+    float2 uv = texcoord;
+    float2 center = float2(0.5f, 0.5f);
+    float2 p = uv - center;
+    
+    float dist = length(p);
+    float angle = atan2(p.y, p.x);
+    
+    float pattern = sin(dist * 20.0 - time * 6.0 + angle * 5.0);
+    
+    float v = abs(pattern);
+    
+    float4 color = float4(v, v, v, 1.0);
+    
+    return color;  
 }
 //--------------------------------------------------------------------------------------
 float4 FX_XenonStrobe(float beat)
@@ -436,25 +474,16 @@ float4 FX_XenonStrobe(float beat)
     return color;
 }
 //--------------------------------------------------------------------------------------
-float4 FX_XenonStrobe(float beat)
-{
-    float pulse = beatPulse(beat + 0.5f);
-    float flash = pulse * 5.0;
-    
-    float4 color = float4(flash, flash, flash, 1.0);
-    
-    return color;
-}
-//--------------------------------------------------------------------------------------
 // Pixel Shader
 //--------------------------------------------------------------------------------------
 PS_OUTPUT ps_main(PS_INPUT input)
 {
     int FX_Select = g_FX_Select;
-    int FX_Activate = g_FX_Activate;
-    bool FX_Inverted = (g_FX_Inverted == 1.0) ? true : false;
     float iTime = g_FX_Time;
     float iBeat = g_FX_SongPosBeats;
+    int FX_Activate = g_FX_Activate;
+    bool FX_Inverted = (g_FX_Inverted == 1) ? true : false;
+    
     
     float2 texcoord = input.TexCoord;
     float4 colorIn = g_Texture2D.Sample(g_SamplerState, texcoord);
@@ -579,6 +608,10 @@ PS_OUTPUT ps_main(PS_INPUT input)
     else if (FX_Select == 30)
     {
         color = FX_XenonStrobe(iBeat);
+    }
+    else if (FX_Select == 31)
+    {
+        color = FX_RaveTunnel(texcoord, iTime);
     }
     
     PS_OUTPUT output;

@@ -258,6 +258,10 @@ HRESULT VDJ_API CElectrickShock8::OnGetParameterString(int id, char* outParam, i
 				case 30:
 					sprintf_s(outParam, outParamSize, "XenonStrobe");
 					break;
+
+				case 31:
+					sprintf_s(outParam, outParamSize, "RaveTunnel");
+					break;
 			}
 			break;
 
@@ -675,7 +679,7 @@ HRESULT CElectrickShock8::Update_PSConstantBufferData_D3D11()
 	m_PSConstantBufferData.FX_SongPosBeats = (SongPosBeats < 0) ? 0.0f : float(SongPosBeats);
 	m_PSConstantBufferData.FX_Select = m_FX_Select;
 	m_PSConstantBufferData.FX_Activate = m_FX_Activate;
-	m_PSConstantBufferData.FX_Inverted = float(m_Time);
+	m_PSConstantBufferData.FX_Inverted = int(m_FX_Time);
 
 	return S_OK;
 }
@@ -853,8 +857,8 @@ void CElectrickShock8::ComputeFFT(float* buffer, int nb, int fft_size)
 	}
 
 	// We compute the FFT
-	int half = fft_size / 2;
-	size_t n = half + 1;
+	int half = int(fft_size / 2.0);
+	size_t n = (size_t) (half + 1);
 	float* in = fftwf_alloc_real(fft_size);
 	fftwf_complex* out = fftwf_alloc_complex(n);
 
